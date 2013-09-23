@@ -1,0 +1,6 @@
+Revision history for Perl extension Perl::Critic::Policy::Local::RequireArgUnpackOrShift.
+
+0.01  Sun Sep 22 13:51:17 2013
+	- original version; created by h2xs 1.23 with options
+		-X -n Perl::Critic::Policy::Local::RequireArgUnpackOrShift
+

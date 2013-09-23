@@ -1,0 +1,323 @@
+## name basic passes
+## failures 0
+## cut
+
+sub forward;
+
+sub foo {
+   my ($self, $bar) = @_;
+   print $bar;
+   return;
+}
+
+sub fu {
+   my $self = shift;
+   my $bar = shift;
+   print $bar;
+   return;
+}
+
+#-----------------------------------------------------------------------------
+
+## name prototype passes
+## failures 0
+## cut
+
+sub foo() {
+   print $bar;
+   return;
+}
+
+#-----------------------------------------------------------------------------
+
+## name scheduled subs
+## failures 0
+## cut
+
+BEGIN {
+  print 1;
+  print 2;
+  print 3;
+}
+
+INIT {
+  print 1;
+  print 2;
+  print 3;
+}
+
+CHECK {
+  print 1;
+  print 2;
+  print 3;
+}
+
+END {
+  print 1;
+  print 2;
+  print 3;
+}
+
+#-----------------------------------------------------------------------------
+
+## name passes - no arguments
+## failures 0
+## cut
+
+sub few { }
+sub phu { 1; }
+sub phoo { return; }
+
+#-----------------------------------------------------------------------------
+
+## name failure - not idiomatic enough
+## failures 2
+## cut
+
+sub quux {
+    my $self = shift @_;
+    print $self;
+}
+
+sub cwux {
+    my ($self) = ($_[0]);
+    print $self;
+}
+
+#-----------------------------------------------------------------------------
+
+## name basic failures
+## failures 2
+## cut
+
+sub bar {
+  print $_[0];
+  print $_[1];
+  print $_[2];
+  print $_[3];
+}
+
+sub barr {
+  print $_[1];
+}
+
+#-----------------------------------------------------------------------------
+
+## name failure in an anonymous sub
+## failures 1
+## TODO PPI v1.118 doesn't recognize anonymous subroutines
+## cut
+
+my $x = bar {
+  print $_[0];
+  print $_[1];
+  print $_[2];
+  print $_[3];
+}
+
+#-----------------------------------------------------------------------------
+
+## name basic failures, set config higher
+## failures 1
+## parms {short_subroutine_statements => 1}
+## cut
+
+sub bar {
+  print $_[0];
+  print $_[1];
+  print $_[2];
+  print $_[3];
+}
+
+sub barr {
+  print $_[1];
+}
+
+#-----------------------------------------------------------------------------
+
+## name mixed failures
+## failures 2
+## cut
+
+sub baz {
+  my $self = shift;
+  print $_[0];
+  print $_[1];
+  print $_[2];
+  print $_[3];
+}
+
+sub baaz {
+  my ($self) = @_;
+  print $_[0];
+  print $_[1];
+  print $_[2];
+  print $_[3];
+}
+
+#-----------------------------------------------------------------------------
+
+## name nested anon sub
+## failures 0
+## cut
+
+sub baz {
+    print "here\n";
+    return sub {
+        my ($self) = @_;
+        print $self->{bar};
+    };
+}
+
+#-----------------------------------------------------------------------------
+
+## name nested name sub
+## failures 0
+## cut
+
+sub baz {
+    print "here\n";
+    sub bar {
+        my ($self) = @_;
+        print $self->{bar};
+    }
+    $x->bar();
+}
+
+#-----------------------------------------------------------------------------
+
+## name array slice (POE convention), default behavior
+## failures 1
+## cut
+
+sub foo {
+    my ( $kernel, $heap, $input ) = @_[ KERNEL, HEAP, ARG0 ];
+}
+
+#-----------------------------------------------------------------------------
+
+## name array slice (POE convention) with indices allowed
+## parms { allow_subscripts => '1' }
+## failures 0
+## cut
+
+sub foo {
+    my ( $kernel, $heap, $input ) = @_[ KERNEL, HEAP, ARG0 ];
+}
+
+sub bar {
+    my $kernel = $_[ KERNEL ];
+    my $heap   = $_[ HEAP   ];
+    my $input  = $_[ ARG0   ];
+}
+
+
+#-----------------------------------------------------------------------------
+
+## name exclude foreach rt#39601
+## failures 0
+## cut
+
+sub my_sub {
+
+    my @a = ( [ 1, 2 ], [ 3, 4 ] );
+    print @$_[0] foreach @a;
+
+    my @b = ( [ 1, 2 ], [ 3, 4 ] );
+    print @$_[0] for @b;
+
+}
+
+#-----------------------------------------------------------------------------
+
+## name and still catch unrolling args in a postfix for
+## failures 1
+## cut
+
+sub my_sub {
+
+    my @a = ( [ 1, 2 ], [ 3, 4 ] );
+    print $_[0] for @a;
+}
+
+#-----------------------------------------------------------------------------
+
+## name Allow the usual delegation idioms.
+## failures 0
+## cut
+
+sub foo {
+    my $self = shift;
+    return $self->SUPER::foo(@_);
+}
+
+sub bar {
+    my $self = shift;
+    return $self->NEXT::bar(@_);
+}
+
+#-----------------------------------------------------------------------------
+
+## name Don't allow delegation to unknown places.
+## failures 2
+## cut
+
+sub foo {
+    my $self = shift;
+    # No, Class::C3 doesn't really work this way.
+    return $self->Class::C3::foo(@_);
+}
+
+sub bar {
+    my $self = shift;
+    return $self->_unpacker(@_);
+}
+
+#-----------------------------------------------------------------------------
+
+## name Allow delegation to places we have been told about.
+## failures 0
+## parms { allow_delegation_to => 'Class::C3:: _unpacker' }
+## cut
+
+sub foo {
+    my $self = shift;
+    # No, Class::C3 doesn't really work this way.
+    return $self->Class::C3::foo(@_);
+}
+
+sub bar {
+    my $self = shift;
+    return $self->_unpacker(@_);
+}
+
+#-----------------------------------------------------------------------------
+
+## name Recognize $$_[0] as a use of $_, not @_ (rt #37713)
+## failures 0
+## cut
+
+sub foo {
+    my %hash = ( a => 1, b => 2 );
+    my @data = ( [ 10, 'a' ], [ 20, 'b' ], [ 30, 'c' ] );
+    # $$_[1] is a funky way to say $_->[1].
+    return [ grep { $hash{ $$_[1] } } @data ];
+}
+
+#-----------------------------------------------------------------------------
+
+##############################################################################
+#      $URL: http://perlcritic.tigris.org/svn/perlcritic/trunk/distributions/Perl-Critic/t/Subroutines/RequireArgUnpacking.run $
+#     $Date: 2011-02-02 20:26:57 -0800 (Wed, 02 Feb 2011) $
+#   $Author: wyant $
+# $Revision: 4027 $
+##############################################################################
+
+# Local Variables:
+#   mode: cperl
+#   cperl-indent-level: 4
+#   fill-column: 78
+#   indent-tabs-mode: nil
+#   c-indentation-style: bsd
+# End:
+# ex: set ts=8 sts=4 sw=4 tw=78 ft=perl expandtab shiftround :

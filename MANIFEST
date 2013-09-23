@@ -1,0 +1,6 @@
+Changes
+Makefile.PL
+MANIFEST
+README
+t/Perl-Critic-Policy-Local-RequireArgUnpackOrShift.t
+lib/Perl/Critic/Policy/Local/RequireArgUnpackOrShift.pm
